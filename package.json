@@ -1,5 +1,10 @@
 {
+  "scripts": {
+    "start": "node chatbot.js",
+    "test:ai": "node testAI.js"
+  },
   "dependencies": {
+    "dotenv": "^16.4.7",
     "moment-timezone": "^0.5.45",
     "openai": "^4.78.1",
     "qrcode-terminal": "^0.12.0",

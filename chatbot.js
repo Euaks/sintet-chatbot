@@ -1,8 +1,11 @@
 // =====================================
 // IMPORTAÇÕES
 // =====================================
+require("dotenv").config();
 const qrcode = require("qrcode-terminal");
-const { Client, MessageMedia, LocalAuth } = require("whatsapp-web.js");
+const { Client, LocalAuth } = require("whatsapp-web.js");
+const { buscarResposta, normalizeText } = require("./knowledgeBase");
+const { gerarRespostaIA } = require("./aiService");
 
 // =====================================
 // CONFIGURAÇÃO DO CLIENTE
@@ -53,49 +56,78 @@ client.initialize();
 // =====================================
 const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
+const mensagensEmProcessamento = new Set();
+
+async function gerarResposta(texto) {
+  const respostaLocal = buscarResposta(texto);
+
+  if (respostaLocal) {
+    return respostaLocal;
+  }
+
+  const respostaIA = await gerarRespostaIA(texto);
+  return respostaIA || "Não entendi. Deseja falar com um atendente?";
+}
+
 // =====================================
 // FUNIL DE MENSAGENS (SOMENTE PRIVADO)
 // =====================================
 client.on("message", async (msg) => {
   try {
+    if (msg.fromMe) return;
+
     // ❌ IGNORA QUALQUER COISA QUE NÃO SEJA CONVERSA PRIVADA
     if (!msg.from || msg.from.endsWith("@g.us")) return;
 
     const chat = await msg.getChat();
     if (chat.isGroup) return; // blindagem extra
 
-    const texto = msg.body ? msg.body.trim().toLowerCase() : "";
+    const textoOriginal = msg.body ? msg.body.trim() : "";
+    const texto = normalizeText(textoOriginal);
 
-    // Função de digitação
-    const typing = async () => {
-      await delay(2000);
-      await chat.sendStateTyping();
-      await delay(2000);
-    };
+    if (!texto) return;
 
-    // =====================================
-    // MENSAGEM INICIAL
-    // =====================================
-    if (/^(menu|oi|Oi||olá|ola|bom dia|boa tarde|boa noite)$/i.test(texto)) {
+    const mensagemId = msg.id?._serialized || `${msg.from}-${msg.timestamp}-${texto}`;
+
+    if (mensagensEmProcessamento.has(mensagemId)) {
+      return;
+    }
+
+    mensagensEmProcessamento.add(mensagemId);
+
+    try {
+      // Função de digitação
+      const typing = async () => {
+        await delay(2000);
+        await chat.sendStateTyping();
+        await delay(2000);
+      };
+
+      // =====================================
+      // MENU FIXO
+      // =====================================
+      if (texto === "menu") {
+        await typing();
+
+        await client.sendMessage(
+          msg.from,
+          "Olá! 👋\n\n" +
+            "Sou o assistente do SINTET Tocantins.\n\n" +
+            "Você pode perguntar sobre filiação, direitos, atendimento, telefone, localização e horários.\n" +
+            "Se precisar, também posso encaminhar para um atendimento humano."
+        );
+
+        return;
+      }
 
       await typing();
 
-      const hora = new Date().getHours();
-      let saudacao = "Olá";
+      const resposta = await gerarResposta(textoOriginal);
 
-      if (hora >= 5 && hora < 12) saudacao = "Bom dia";
-      else if (hora >= 12 && hora < 18) saudacao = "Boa tarde";
-      else saudacao = "Boa noite";
-
-      await client.sendMessage(
-        msg.from,
-        `${saudacao}! 👋\n\n` +
-        `Essa mensagem foi enviada automaticamente pelo robôôôôôôôôôôôôôôô\n\n` +
-        `.\n\n` +
-        'Não mande mensagem\n');
-      
+      await client.sendMessage(msg.from, resposta);
+    } finally {
+      mensagensEmProcessamento.delete(mensagemId);
     }
-
 
   } catch (error) {
     console.error("❌ Erro no processamento da mensagem:", error);

@@ -1,0 +1,23 @@
+[saudacao]
+Olá! Sou o assistente do SINTET Tocantins. Posso ajudar com informações sobre o sindicato, filiação, direitos dos trabalhadores, atendimento, telefone, localização e horários.
+
+[descricao]
+O SINTET Tocantins é uma entidade sindical que representa trabalhadores da educação e atua na defesa de direitos, valorização profissional, melhores condições de trabalho e orientação sindical.
+
+[filiacao]
+A filiação é o processo para o trabalhador se tornar parte da base sindical. Em geral, o atendimento orienta sobre documentos, cadastro e os próximos passos para concluir a filiação.
+
+[direitos]
+O sindicato atua na defesa de direitos como valorização profissional, jornada de trabalho, condições adequadas de atuação, negociação coletiva e orientação aos trabalhadores.
+
+[atendimento]
+O atendimento pode ser usado para tirar dúvidas, pedir orientação e encaminhar demandas. Se a resposta automática não resolver, um atendente humano pode continuar o atendimento.
+
+[telefone]
+Telefone oficial: 99999-9999.
+
+[localizacao]
+Localização oficial: Rua 02 quadra 09.
+
+[horarios]
+Horários de atendimento: das 18h as 22h de segunda a sexta. Sabado até meio dia.
