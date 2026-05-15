@@ -101,6 +101,52 @@ function mensagemHumano() {
   return `👨‍💼 Um atendente humano irá entrar em contato com você em breve.`;
 }
 
+const enderecosSintet = {
+  palmas: "Quadra ARNE 14 (110 Norte), Alameda 25, Lote 31, Centro, CEP 77006-148.",
+  "porto nacional": "Rua Vasco da Gama, Nº 1113, Centro, CEP 77500-000.",
+  guarai: "Avenida JK, Nº 2710, Centro, CEP 77700-000.",
+  "paraiso do tocantins": "Rua 7 de Setembro, Nº 1601, Setor Oeste, CEP 77600-000.",
+  tocantinopolis: "Rua do Ouro, Nº 427, Centro, CEP 77900-000.",
+  araguaina: "Rua Neief Murad, Quadra 26, Lote 02, Jardim Santa Helena, CEP 77818-110.",
+  gurupi: "Rua Coronel Rodrigues, Nº 256, Centro, CEP 77402-090.",
+  "colinas do tocantins": "Rua Tocantins, Quadra 05, Lote 20, Setor Sul, CEP 77760-000.",
+  augustinopolis: "Rua Santos Dumont, Nº 125, Centro, CEP 77960-000.",
+  "miracema do tocantins": "Rua Tocantins, Nº 618, Centro, CEP 77650-000.",
+  dianopolis: "Avenida Sete de Setembro, Nº 512, Centro, CEP 77300-000.",
+  arraias: "Praça Dr. Juvêncio, Nº 40, Centro, CEP 77330-000.",
+};
+
+function formatarMunicipio(nomeMunicipio) {
+  return String(nomeMunicipio || "")
+    .split(" ")
+    .filter(Boolean)
+    .map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1))
+    .join(" ");
+}
+
+function ehConsultaLocalizacao(textoOriginal) {
+  const texto = normalizeText(textoOriginal).toLowerCase();
+  if (!texto) return false;
+
+  const termosLocalizacao = [
+    "localizacao",
+    "endereco",
+    "onde fica",
+    "onde e",
+    "onde eh",
+    "qual endereco",
+    "qual e o endereco",
+    "qual é o endereço",
+  ];
+
+  return termosLocalizacao.some((termo) => texto.includes(normalizeText(termo)));
+}
+
+function buscarEnderecoMunicipio(textoOriginal) {
+  const municipio = normalizeText(textoOriginal).toLowerCase();
+  return enderecosSintet[municipio] || null;
+}
+
 function deveIrParaMenu(texto, estadoAtual) {
   const palavrasInicio = ["oi", "ola", "olá", "menu", "inicio", "início", "start", "ajuda", "atendimento", "suporte"];
   return texto === "menu" || (estadoAtual === "servicos" && palavrasInicio.some((p) => texto.includes(p)));
@@ -161,6 +207,31 @@ client.on("message", async (msg) => {
         await typing();
         await client.sendMessage(msg.from, mensagemMenu());
         setEstado(msg.from, "aguardando_opcao");
+        return;
+      }
+
+      if (estadoAtual === "aguardando_municipio") {
+        const endereco = buscarEnderecoMunicipio(textoOriginal);
+
+        await typing();
+
+        if (endereco) {
+          await client.sendMessage(
+            msg.from,
+            `📍 Endereço do SINTET em ${formatarMunicipio(texto)}: ${endereco}`
+          );
+          setEstado(msg.from, "aguardando_opcao");
+        } else {
+          await client.sendMessage(msg.from, "Não encontrei esse município. Tente novamente ou digite 'menu'.");
+        }
+
+        return;
+      }
+
+      if (ehConsultaLocalizacao(textoOriginal)) {
+        await typing();
+        setEstado(msg.from, "aguardando_municipio");
+        await client.sendMessage(msg.from, "📍 De qual município você deseja o endereço do SINTET?");
         return;
       }
 
