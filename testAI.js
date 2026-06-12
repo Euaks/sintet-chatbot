@@ -1,18 +1,30 @@
 require("dotenv").config();
 
 const readline = require("readline");
-const { buscarResposta } = require("./knowledgeBase");
-const { gerarRespostaIA } = require("./aiService");
+const { obterRespostaHibrida } = require("./ragService");
+
+// 🔹 Função simples de estimativa
+function estimarTokens(texto) {
+  if (!texto) return 0;
+  return Math.ceil(texto.length / 4);
+}
 
 async function gerarResposta(texto) {
-  const respostaLocal = buscarResposta(texto);
+  const resposta = await obterRespostaHibrida(texto, "cli");
 
-  if (respostaLocal) {
-    return respostaLocal;
-  }
+  // 🔥 LOG DE TOKENS (entrada + saída)
+  const tokensEntrada = estimarTokens(texto);
+  const tokensSaida = estimarTokens(resposta);
 
-  const respostaIA = await gerarRespostaIA(texto);
-  return respostaIA || "Não entendi. Deseja falar com um atendente?";
+  console.log("\n[USO DE TOKENS]");
+  console.log("Entrada:", tokensEntrada);
+  console.log("Saída:", tokensSaida);
+  console.log("Total:", tokensEntrada + tokensSaida);
+
+  return (
+    resposta ||
+    "Não encontrei essa informação com segurança. Se quiser, posso encaminhar para um atendente humano."
+  );
 }
 
 const entrada = readline.createInterface({

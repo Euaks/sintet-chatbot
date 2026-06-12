@@ -6,4 +6,6 @@ module.exports = [
   "como posso",
   "quero saber",
   "atende de noite",
+  "processo administrativo",
+  "processos administrativos",
 ];

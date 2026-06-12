@@ -36,6 +36,7 @@ module.exports = {
     "como faço pra me filiar",
   ],
   direitos: ["direitos", "salario", "carreira", "beneficios", "ajuda", "apoio"],
+  assessoria_juridica: ["juridica", "juridico", "processo administrativo", "processos administrativos", "defesa legal", "apoio juridico"],
   atendimento: [
     "atendimento",
     "atendente",
