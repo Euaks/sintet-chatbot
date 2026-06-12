@@ -15,7 +15,7 @@ const { obterRespostaHibrida } = require("./ragService");
 const atendimentoHumano = {};
 const tickets = {};
 const option = {};;
-const GRUPO_SUPORTE = "";
+const GRUPO_SUPORTE = "120363408468897027@g.us";
 
 // =====================================
 // CONFIGURAÇÃO DO CLIENTE
@@ -174,8 +174,7 @@ const getContatoId = (msg) => {
 // =====================================
 // CRIANDO TICKET 
 // =====================================
-const createTicket = (contatoId, msg) => {
-    
+const createTicket = async (contatoId, msg) => {
     atendimentoHumano[contatoId] = true;
 
     const protocolo = Date.now().toString().slice(-6);
@@ -195,7 +194,7 @@ const createTicket = (contatoId, msg) => {
         `📩 *NOVO TICKET*\n\n` +
         `🎫 Protocolo: #\`${protocolo}\`\n` +
         `👤 Nome: ${tickets[contatoId].cliente}\n` +
-        `💬 Demanda:${option}\n\n` +
+        `💬 Demanda: ${option[contatoId]}\n\n` +
         `Para assumir:\n` +
         `Digite /assumir -número de protocolo-.\n\n` +
         `Para encerrar:\n` +
@@ -570,7 +569,7 @@ client.on("message", async (msg) => {
                 if (texto === "3") {
                     await typing();
                     await client.sendMessage(msg.from, mensagemHumano());
-                    createTicket(contatoId,msg);
+                    await createTicket(contatoId, msg);
                     option[contatoId] = "Atendimento geral";
                     return;
                 }
@@ -589,52 +588,52 @@ client.on("message", async (msg) => {
                     switch (texto) {
                     case "1":
                         await client.sendMessage(msg.from, `*FILIE-SE*\n\nPara realizar sua filiação ao SINTET, envie:\n\n• Nome completo\n• CPF\n• Telefone\n• Cidade\n\nNossa equipe irá continuar seu atendimento.`);
-                        createTicket(contatoId,msg);
+                        await createTicket(contatoId, msg);
                         option[contatoId] = "Filiação";
                         break;
                     case "2":
                         await client.sendMessage(msg.from, `*ATUALIZAÇÃO DE DADOS*\n\nEnvie os dados que deseja atualizar.\n\nExemplo:\n• Telefone\n• Endereço\n• E-mail`);
-                        createTicket(contatoId,msg);
+                        await createTicket(contatoId, msg);
                         option[contatoId] = "Atualizar dados";
                         break;
                     case "3":
                         await client.sendMessage(msg.from, `*CARTEIRINHA*\n\nPara solicitar sua carteirinha, envie:\n\n• Nome completo\n• CPF\n• Foto`);
-                        createTicket(contatoId,msg);
+                        await createTicket(contatoId, msg);
                         option[contatoId] = "Carteirinha";
                         break;
                     case "4":
                         await client.sendMessage(msg.from, `🎫 *CONVITE PARA CLUBE*\n\nInforme:\n\n• Nome completo\n• Quantidade de convidados\n• Data desejada`);
-                        createTicket(contatoId,msg);
+                        await createTicket(contatoId, msg);
                         option[contatoId] = "Convite para clube";
                         break;
                     case "5":
                         await client.sendMessage(msg.from, `🏖️ *RESERVAR CLUBE*\n\nPara realizar uma reserva, envie:\n\n• Nome completo\n• Data desejada\n• Quantidade de pessoas`);
-                        createTicket(contatoId,msg);
+                        await createTicket(contatoId, msg);
                         option[contatoId] = "Reservar clube";
                         break;
                     case "6":
                         await client.sendMessage(msg.from, `🏨 *AGENDAR HOSPEDAGEM*\n\nEnvie as seguintes informações:\n\n• Nome completo\n• Data de entrada\n• Data de saída\n• Quantidade de hóspedes`);
+                        await createTicket(contatoId, msg);
                         option[contatoId] = "Agendar hospedagem";
-                        createTicket(contatoId,msg);
                         break;
                     case "7":
                         await client.sendMessage(msg.from, `📚 *ATENDIMENTO JURÍDICO*\n\nEnvie as seguintes informações:\n\n• Nome completo\n• CPF\n• Telefone\n• Cidade\n• Assunto do atendimento`);
-                        createTicket(contatoId,msg);
+                        await createTicket(contatoId, msg);
                         option[contatoId] = "Atendimento jurídico";
                         break;
                     case "8":
                         await client.sendMessage(msg.from, `🏨 *SINTET PALMAS*\n\nEnvie as seguintes informações:\n\n• Nome completo\n• CPF\n• Telefone\n• Assunto do atendimento`);
-                        createTicket(contatoId,msg);
+                        await createTicket(contatoId, msg);
                         option[contatoId] = "Atendimento geral";
                         break;
                     case "9":
                         await client.sendMessage(msg.from, `💰 *FINANCEIRO*\  n\nEnvie as seguintes informações:\n\n• Nome completo\n• CPF\n• Telefone\n• Assunto do atendimento`);
-                        createTicket(contatoId,msg);
+                        await createTicket(contatoId, msg);
                         option[contatoId] = "Atendimento financeiro";
                         break;
                     case "10":
                         await client.sendMessage(msg.from, `📢 *COMUNICAÇÃO*\  n\nEnvie as seguintes informações:\n\n• Nome completo\n• CPF\n• Telefone\n• Assunto do atendimento`);
-                        createTicket(contatoId,msg);
+                        await createTicket(contatoId, msg);
                         option[contatoId] = "Atendimento geral";
                         break;
                     }
