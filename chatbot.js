@@ -88,7 +88,7 @@ function mensagemIA() {
 }
 
 function mensagemServicos() {
-    return `*Serviços disponíveis:*\n\n1 - FILIE-SE\n2 - ATUALIZAR DADOS\n3 - CARTEIRINHA\n4 - CONVITE PARA CLUBE\n5 - RESERVAR CLUBE\n6 - AGENDAR HOSPEDAGEM\n\nDigite o número da opção desejada.`;
+    return `*Serviços disponíveis:*\n\n1 - FILIE-SE\n2 - ATUALIZAR DADOS\n3 - CARTEIRINHA\n4 - CONVITE PARA CLUBE\n5 - RESERVAR CLUBE\n6 - AGENDAR HOSPEDAGEM\n7 - ATENDIMENTO JURÍDICO\n8 - SINTET PALMAS\n9 - FINANCEIRO\n10 - COMUNICAÇÃO\n\nDigite o número da opção desejada.`;
 }
 
 function mensagemHumano() {
@@ -363,7 +363,6 @@ client.on("message", async (msg) => {
                     `🙋 Atendente: ${ticket.atendente}\n` +
                     `🎫 Protocolo: #\`${ticket.protocolo}\`\n` +
                     `👤 Cliente: ${ticket.cliente}\n` +
-                    `📱 Número: ${ticket.telefone}\n` +
                     `📌 Demanda: ${ticket.necessidade}\n\n` 
                 );
 
