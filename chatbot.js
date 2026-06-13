@@ -15,7 +15,7 @@ const { obterRespostaHibrida } = require("./ragService");
 const atendimentoHumano = {};
 const tickets = {};
 const option = {};;
-const GRUPO_SUPORTE = "120363408468897027@g.us";
+const GRUPO_SUPORTE = process.env.GRUPO_SUPORTE;
 
 // =====================================
 // CONFIGURAÇÃO DO CLIENTE
