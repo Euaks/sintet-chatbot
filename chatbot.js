@@ -15,7 +15,18 @@ const { obterRespostaHibrida } = require("./ragService");
 const atendimentoHumano = {};
 const tickets = {};
 const option = {};;
-const GRUPO_SUPORTE = process.env.GRUPO_SUPORTE;
+const GRUPOS_ATENDIMENTO = {
+  filiacao: process.env.GRUPO_FILIACAO,
+  cadastro: process.env.GRUPO_CADASTRO,
+  carteirinha: process.env.GRUPO_CARTEIRINHA,
+  clube: process.env.GRUPO_CLUBE,
+  hospedagem: process.env.GRUPO_HOSPEDAGEM,
+  juridico: process.env.GRUPO_JURIDICO,
+  palmas: process.env.GRUPO_PALMAS,
+  financeiro: process.env.GRUPO_FINANCEIRO,
+  comunicacao: process.env.GRUPO_COMUNICACAO,
+  geral: process.env.GRUPO_GERAL,
+};
 
 function formatarDataMensagem(data) {
   return new Date(data || Date.now()).toLocaleString("pt-BR");
@@ -206,7 +217,7 @@ const getContatoId = (msg) => {
 // =====================================
 // CRIANDO TICKET 
 // =====================================
-const createTicket = async (contatoId, msg) => {
+const createTicket = async (contatoId, msg, departamento) => {
   atendimentoHumano[contatoId] = true;
 
   const protocolo = Date.now().toString().slice(-6);
@@ -219,6 +230,7 @@ const createTicket = async (contatoId, msg) => {
     status: "aberto",
     cliente: contato.pushname || "Não informado",
     necessidade: option[contatoId],
+    departamento: GRUPOS_ATENDIMENTO[departamento] || GRUPOS_ATENDIMENTO.geral,
     contatoId: contatoId,
     mensagensCliente: [],
   };
@@ -226,7 +238,7 @@ const createTicket = async (contatoId, msg) => {
   adicionarMensagemAoTicket(contatoId, `Solicitação aberta para: ${option[contatoId] || "Atendimento geral"}`, "sistema");
 
   await client.sendMessage(
-    GRUPO_SUPORTE,
+    tickets[contatoId].departamento,
     `📩 *NOVO TICKET*\n\n` +
     `🎫 Protocolo: #\`${protocolo}\`\n` +
     `👤 Nome: ${tickets[contatoId].cliente}\n` +
@@ -302,8 +314,16 @@ client.on("message", async (msg) => {
       return;
     }
 
-    if (msg.from === GRUPO_SUPORTE || msg.to === GRUPO_SUPORTE) {
+  const gruposSuporte = Object.values(
+  GRUPOS_ATENDIMENTO
+);
 
+
+
+    if (gruposSuporte.includes(msg.from)) {
+
+      const grupoAtual = msg.from;
+      console.log(grupoAtual);
       const textoGrupo = msg.body.trim();
 
       // COMANDO INTERNO PARA REATIVAÇÃO DO BOT APÓS ATENDIMENTO 
@@ -314,7 +334,7 @@ client.on("message", async (msg) => {
 
         if (!protocolo) {
           await client.sendMessage(
-            GRUPO_SUPORTE,
+            grupoAtual,
             "⚠️ Informe o protocolo.\nExemplo:\n/encerrar 48392"
           );
           return;
@@ -324,13 +344,20 @@ client.on("message", async (msg) => {
 
         if (!resultado) {
           await client.sendMessage(
-            GRUPO_SUPORTE,
+            grupoAtual,
             `❌ Ticket #${protocolo} não encontrado.`
           );
           return;
         }
 
         const [contatoId, ticket] = resultado;
+
+        if (ticket.departamento != grupoAtual) {
+	await client.sendMessage(
+	   grupoAtual,
+ 	   `❌ Este ticket pertence a outro setor.`);
+	return;
+         }
 
         delete atendimentoHumano[contatoId];
 
@@ -345,7 +372,7 @@ client.on("message", async (msg) => {
         );
 
         await client.sendMessage(
-          GRUPO_SUPORTE,
+          grupoAtual,
           `✅ Ticket #${protocolo} encerrado com sucesso.`
         );
 
@@ -359,7 +386,7 @@ client.on("message", async (msg) => {
 
         if (!protocolo) {
           await client.sendMessage(
-            GRUPO_SUPORTE,
+            grupoAtual,
             "⚠️ Informe o protocolo.\nExemplo:\n/assumir 48392"
           );
           return;
@@ -369,7 +396,7 @@ client.on("message", async (msg) => {
 
         if (!resultado) {
           await client.sendMessage(
-            GRUPO_SUPORTE,
+            grupoAtual,
             `❌ Ticket #${protocolo} não encontrado.`
           );
           return;
@@ -377,9 +404,16 @@ client.on("message", async (msg) => {
 
         const [contatoId, ticket] = resultado;
 
+       if (ticket.departamento != grupoAtual) {
+	await client.sendMessage(
+	   grupoAtual,
+ 	   `❌ Este ticket pertence a outro setor.`);
+	return;
+         }
+
         if (ticket.status === "em processo") {
           await client.sendMessage(
-            GRUPO_SUPORTE,
+            grupoAtual,
             `❌ Ticket #${protocolo} já assumido.`
           );
           return;
@@ -390,7 +424,7 @@ client.on("message", async (msg) => {
         ticket.atendenteId = msg.author;
 
         await client.sendMessage(
-          GRUPO_SUPORTE,
+          grupoAtual,
           `✅ Ticket #${protocolo} assumido por ${ticket.atendente}.`
         );
 
@@ -407,15 +441,15 @@ client.on("message", async (msg) => {
       } else if (textoGrupo.startsWith("/tickets")) {
 
         const ticketsAbertos = Object.entries(tickets)
-          .filter(([_, ticket]) => ticket.status === "aberto");
+          .filter(([_, ticket]) => ticket.departamento == grupoAtual && ticket.status === "aberto");
 
         const ticketsEmProcesso = Object.entries(tickets)
-          .filter(([_, ticket]) => ticket.status === "em processo");
+          .filter(([_, ticket]) => ticket.departamento == grupoAtual && ticket.status === "em processo");
 
         if (ticketsAbertos.length === 0 && ticketsEmProcesso.length === 0) {
 
           await client.sendMessage(
-            GRUPO_SUPORTE,
+            grupoAtual,
             "☑️ Nenhum ticket disponível."
           );
 
@@ -452,7 +486,7 @@ client.on("message", async (msg) => {
         }
 
         await client.sendMessage(
-          GRUPO_SUPORTE,
+          grupoAtual,
           mensagem
         );
 
@@ -460,12 +494,12 @@ client.on("message", async (msg) => {
       } else if (textoGrupo.startsWith("/meustickets")) {
 
         const seusTickets = Object.entries(tickets)
-          .filter(([_, ticket]) => ticket.atendente === (msg._data.notifyName || msg.author));
+          .filter(([_, ticket]) => ticket.departamento == grupoAtual && ticket.atendente === (msg._data.notifyName || msg.author));
 
         if (seusTickets.length === 0) {
 
           await client.sendMessage(
-            GRUPO_SUPORTE,
+            grupoAtual,
             "☑️ Você não possui tickets pendentes."
           );
 
@@ -485,7 +519,7 @@ client.on("message", async (msg) => {
         }
 
         await client.sendMessage(
-          GRUPO_SUPORTE,
+          grupoAtual,
           mensagem
         );
 
@@ -493,7 +527,7 @@ client.on("message", async (msg) => {
       } else if (textoGrupo.startsWith("/")) {
 
         await client.sendMessage(
-          GRUPO_SUPORTE,
+          grupoAtual,
           `❌*COMANDO INVÁLIDO*\n\n` +
           `📋 *LISTAS DE COMANDOS*\n` +
           `/tickets: usado para listar todos os tickets não finalizados\n` +
@@ -610,7 +644,7 @@ client.on("message", async (msg) => {
           await typing();
           await client.sendMessage(msg.from, mensagemHumano());
           option[contatoId] = "Atendimento geral";
-          await createTicket(contatoId, msg);
+          await createTicket(contatoId, msg, "geral");
           return;
         }
 
@@ -629,37 +663,37 @@ client.on("message", async (msg) => {
             case "1":
               await client.sendMessage(msg.from, `*FILIE-SE*\n\nPara realizar sua filiação ao SINTET, envie:\n\n• Nome completo\n• CPF\n• Telefone\n• Cidade\n\nNossa equipe irá continuar seu atendimento.`);
               option[contatoId] = "Filiação";
-              await createTicket(contatoId, msg);
+              await createTicket(contatoId, msg, "filiacao");
               break;
             case "2":
               await client.sendMessage(msg.from, `*ATUALIZAÇÃO DE DADOS*\n\nEnvie os dados que deseja atualizar.\n\nExemplo:\n• Telefone\n• Endereço\n• E-mail`);
               option[contatoId] = "Atualizar dados";
-              await createTicket(contatoId, msg);
+              await createTicket(contatoId, msg, "cadastro");
               break;
             case "3":
               await client.sendMessage(msg.from, `*CARTEIRINHA*\n\nPara solicitar sua carteirinha, envie:\n\n• Nome completo\n• CPF\n• Foto`);
               option[contatoId] = "Carteirinha";
-              await createTicket(contatoId, msg);
+              await createTicket(contatoId, msg, "carteirinha");
               break;
             case "4":
               await client.sendMessage(msg.from, `🎫 *CONVITE PARA CLUBE*\n\nInforme:\n\n• Nome completo\n• Quantidade de convidados\n• Data desejada`);
               option[contatoId] = "Convite para clube";
-              await createTicket(contatoId, msg);
+              await createTicket(contatoId, msg, "clube");
               break;
             case "5":
               await client.sendMessage(msg.from, `🏖️ *RESERVAR CLUBE*\n\nPara realizar uma reserva, envie:\n\n• Nome completo\n• Data desejada\n• Quantidade de pessoas`);
               option[contatoId] = "Reservar clube";
-              await createTicket(contatoId, msg);
+              await createTicket(contatoId, msg, "clube");
               break;
             case "6":
               await client.sendMessage(msg.from, `🏨 *AGENDAR HOSPEDAGEM*\n\nEnvie as seguintes informações:\n\n• Nome completo\n• Data de entrada\n• Data de saída\n• Quantidade de hóspedes`);
               option[contatoId] = "Agendar hospedagem";
-              await createTicket(contatoId, msg);
+              await createTicket(contatoId, msg, "hospedagem");
               break;
             case "7":
               await client.sendMessage(msg.from, `📚 *ATENDIMENTO JURÍDICO*\n\nEnvie as seguintes informações:\n\n• Nome completo\n• CPF\n• Telefone\n• Cidade\n• Assunto do atendimento`);
               option[contatoId] = "Atendimento jurídico";
-              await createTicket(contatoId, msg);
+              await createTicket(contatoId, msg, "juridico");
               break;
             case "8":
               await client.sendMessage(msg.from, `🏨 *SINTET PALMAS*\n\nEnvie as seguintes informações:\n\n• Nome completo\n• CPF\n• Telefone\n• Assunto do atendimento`);
@@ -669,12 +703,12 @@ client.on("message", async (msg) => {
             case "9":
               await client.sendMessage(msg.from, `💰 *FINANCEIRO*\n\nEnvie as seguintes informações:\n\n• Nome completo\n• CPF\n• Telefone\n• Assunto do atendimento`);
               option[contatoId] = "Atendimento financeiro";
-              await createTicket(contatoId, msg);
+              await createTicket(contatoId, msg, "palmas");
               break;
             case "10":
               await client.sendMessage(msg.from, `📢 *COMUNICAÇÃO*\n\nEnvie as seguintes informações:\n\n• Nome completo\n• CPF\n• Telefone\n• Assunto do atendimento`);
               option[contatoId] = "Atendimento geral";
-              await createTicket(contatoId, msg);
+              await createTicket(contatoId, msg, "financeiro");
               break;
           }
           return;
@@ -730,6 +764,8 @@ client.on("message", async (msg) => {
     console.error("❌ Erro no processamento da mensagem:", error);
   }
 });
+
+
 
 
 
