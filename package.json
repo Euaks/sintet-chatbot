@@ -1,10 +1,8 @@
 {
   "scripts": {
-    "start": "node chatbot.js",
-    "test:ai": "node testAI.js"
+    "start": "node chatbot.js"
   },
   "dependencies": {
-    "@google/genai": "^2.7.0",
     "dotenv": "^16.4.7",
     "moment-timezone": "^0.5.45",
     "qrcode-terminal": "^0.12.0",
