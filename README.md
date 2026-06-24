@@ -28,6 +28,38 @@ O objetivo principal é automatizar o atendimento via WhatsApp, oferecendo supor
 
 ---
 
+## ⚠️ Aviso de compatibilidade com navegadores
+
+Este chatbot utiliza a biblioteca **WhatsApp Web.js**, que depende do **Puppeteer**, o qual funciona com base em navegadores do tipo Chromium.
+
+Por esse motivo, o sistema pode apresentar limitações de compatibilidade dependendo do navegador utilizado.
+
+---
+
+### ✅ Navegadores suportados (compatíveis)
+
+* Google Chrome (recomendado)
+* Microsoft Edge (base Chromium)
+* Chromium
+
+---
+
+### ❌ Navegadores não suportados
+
+* Mozilla Firefox
+* Safari
+* Navegadores baseados em Gecko ou WebKit (não Chromium)
+
+---
+
+### 🔧 Observações importantes
+
+* O funcionamento correto do bot depende de um ambiente **Chromium estável**.
+* Em alguns casos, ao utilizar navegadores diferentes do Google Chrome padrão, pode ser necessário ajustar a configuração do `Client`, especialmente o campo `executablePath` do Puppeteer.
+* Essas alterações são necessárias para garantir que o Puppeteer consiga localizar e controlar corretamente o navegador instalado no sistema.
+
+---
+
 ## ⚙️ Funcionalidades do sistema
 
 O chatbot possui um sistema completo de atendimento híbrido (automático + humano), com os seguintes módulos:
