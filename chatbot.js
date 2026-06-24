@@ -6,9 +6,6 @@ require("dotenv").config();
 const qrcode = require("qrcode-terminal");
 const { Client, MessageMedia, LocalAuth } = require("whatsapp-web.js");
 
-const { normalizeText } = require("./knowledgeBase");
-const { obterRespostaHibrida } = require("./ragService");
-
 // =====================================
 // VARIÁVEIS DE CONTROLE
 // =====================================
@@ -104,6 +101,16 @@ client.on("disconnected", (reason) => {
 // =====================================
 client.initialize();
 
+
+function normalizeText(texto) {
+  return String(texto || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
 // =====================================
 // FUNÇÃO DE DELAY
 // =====================================
@@ -123,88 +130,24 @@ function getEstado(user) {
 
 // Mensagens reutilizáveis
 function mensagemMenu() {
-  return `Olá! 👋\n\n*Atendimento SINTET*\n\n1 - Serviços Básicos\n2 - Atendimento com I.A.\n3 - Falar com atendente humano\n\nDigite o número da opção desejada.`;
-}
-
-function mensagemIA() {
-  return `🤖 Você está falando com o assistente inteligente do SINTET.\nPode perguntar normalmente ou digite 'menu' para voltar.`;
+  return `*Atendimento*\n\n1 - Serviços\n2 - Perguntas Frequentes\n3 - Falar com atendente\n\nDigite o número da opção desejada.`;
 }
 
 function mensagemServicos() {
-  return `*Serviços disponíveis:*\n\n1 - FILIE-SE\n2 - ATUALIZAR DADOS\n3 - CARTEIRINHA\n4 - CONVITE PARA CLUBE\n5 - RESERVAR CLUBE\n6 - AGENDAR HOSPEDAGEM\n7 - ATENDIMENTO JURÍDICO\n8 - SINTET PALMAS\n9 - FINANCEIRO\n10 - COMUNICAÇÃO\n\nDigite o número da opção desejada.`;
+  return `*Serviços disponíveis:*\n\n1 - Filia-se\n2 - Atualizar Dados\n3 - Carteirinha\n4 - Convite para Clube\n5 - Reservar Clube\n6 - Agendar Hospedagem\n7 - Atendimento Jurídico\n8 - Sintet Palmas\n9 - Financeiro\n10 - Comunicação\n\nDigite o número da opção desejada.`;
+}
+
+function mensagemPerguntas() {
+  return `*Perguntas frequentes:*\n\n1 - 📍 Localização\n2 - 🕒 Horário de atendimento\n3 - 📄 Serviços oferecidos\n4 - 📢 Notícias e eventos\n\nDigite o número da opção desejada.`;
 }
 
 function mensagemHumano() {
-  return `👨‍💼 Um atendente humano irá entrar em contato com você em breve.`;
-}
-
-const enderecosSintet = {
-  palmas: "Quadra ARNE 14 (110 Norte), Alameda 25, Lote 31, Centro, CEP 77006-148.",
-  "porto nacional": "Rua Vasco da Gama, Nº 1113, Centro, CEP 77500-000.",
-  guarai: "Avenida JK, Nº 2710, Centro, CEP 77700-000.",
-  "paraiso do tocantins": "Rua 7 de Setembro, Nº 1601, Setor Oeste, CEP 77600-000.",
-  tocantinopolis: "Rua do Ouro, Nº 427, Centro, CEP 77900-000.",
-  araguaina: "Rua Neief Murad, Quadra 26, Lote 02, Jardim Santa Helena, CEP 77818-110.",
-  gurupi: "Rua Coronel Rodrigues, Nº 256, Centro, CEP 77402-090.",
-  "colinas do tocantins": "Rua Tocantins, Quadra 05, Lote 20, Setor Sul, CEP 77760-000.",
-  augustinopolis: "Rua Santos Dumont, Nº 125, Centro, CEP 77960-000.",
-  "miracema do tocantins": "Rua Tocantins, Nº 618, Centro, CEP 77650-000.",
-  dianopolis: "Avenida Sete de Setembro, Nº 512, Centro, CEP 77300-000.",
-  arraias: "Praça Dr. Juvêncio, Nº 40, Centro, CEP 77330-000.",
-};
-
-function formatarMunicipio(nomeMunicipio) {
-  return String(nomeMunicipio || "")
-    .split(" ")
-    .filter(Boolean)
-    .map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1))
-    .join(" ");
-}
-
-function ehConsultaLocalizacao(textoOriginal) {
-  const texto = normalizeText(textoOriginal).toLowerCase();
-  if (!texto) return false;
-
-  const termosLocalizacao = [
-    "localizacao",
-    "endereco",
-    "onde fica",
-    "onde e",
-    "onde eh",
-    "qual endereco",
-    "qual e o endereco",
-    "qual é o endereço",
-  ];
-
-  return termosLocalizacao.some((termo) => texto.includes(normalizeText(termo)));
-}
-
-function buscarEnderecoMunicipio(textoOriginal) {
-  const municipio = normalizeText(textoOriginal).toLowerCase();
-  return enderecosSintet[municipio] || null;
+  return `👨‍💼 Um atendente irá entrar em contato com você em breve.`;
 }
 
 function deveIrParaMenu(texto, estadoAtual) {
   const palavrasInicio = ["oi", "ola", "olá", "menu", "inicio", "início", "start", "ajuda", "atendimento", "suporte"];
   return texto === "menu" || (estadoAtual === "servicos" && palavrasInicio.some((p) => texto.includes(p)));
-}
-
-function podeResponderIA(textoOriginal) {
-  const texto = normalizeText(textoOriginal).toLowerCase();
-  if (!texto) return false;
-
-  if (isForaDoEscopo(textoOriginal)) return false;
-
-  const termosLocais = ["sintet", "atendimento", "filiacao", "telefone", "horario", "horarios", "endereco", "localizacao", "clube", "hospedagem", "carteirinha"];
-  if (termosLocais.some((termo) => texto.includes(termo))) return true;
-
-  const palavras = texto.split(" ");
-  if (palavras.length < 3) return false;
-
-  const perguntasGenéricas = ["como funciona", "me ajuda", "informacao", "informacoes", "sobre isso", "o que e", "o que é", "qual e", "qual é"];
-  if (perguntasGenéricas.some((frase) => texto.includes(frase))) return false;
-
-  return true;
 }
 
 // =====================================
@@ -314,9 +257,9 @@ client.on("message", async (msg) => {
       return;
     }
 
-  const gruposSuporte = Object.values(
-  GRUPOS_ATENDIMENTO
-);
+    const gruposSuporte = Object.values(
+      GRUPOS_ATENDIMENTO
+    );
 
 
 
@@ -353,11 +296,11 @@ client.on("message", async (msg) => {
         const [contatoId, ticket] = resultado;
 
         if (ticket.departamento != grupoAtual) {
-	await client.sendMessage(
-	   grupoAtual,
- 	   `❌ Este ticket pertence a outro setor.`);
-	return;
-         }
+          await client.sendMessage(
+            grupoAtual,
+            `❌ Este ticket pertence a outro setor.`);
+          return;
+        }
 
         delete atendimentoHumano[contatoId];
 
@@ -404,12 +347,12 @@ client.on("message", async (msg) => {
 
         const [contatoId, ticket] = resultado;
 
-       if (ticket.departamento != grupoAtual) {
-	await client.sendMessage(
-	   grupoAtual,
- 	   `❌ Este ticket pertence a outro setor.`);
-	return;
-         }
+        if (ticket.departamento != grupoAtual) {
+          await client.sendMessage(
+            grupoAtual,
+            `❌ Este ticket pertence a outro setor.`);
+          return;
+        }
 
         if (ticket.status === "em processo") {
           await client.sendMessage(
@@ -599,30 +542,6 @@ client.on("message", async (msg) => {
         return;
       }
 
-      if (estadoAtual === "aguardando_municipio") {
-        const endereco = buscarEnderecoMunicipio(textoOriginal);
-
-        await typing();
-
-        if (endereco) {
-          await client.sendMessage(
-            msg.from,
-            `📍 Endereço do SINTET em ${formatarMunicipio(texto)}: ${endereco}`
-          );
-          setEstado(msg.from, "aguardando_opcao");
-        } else {
-          await client.sendMessage(msg.from, "Não encontrei esse município. Tente novamente ou digite 'menu'.");
-        }
-        return;
-      }
-
-      if (ehConsultaLocalizacao(textoOriginal)) {
-        await typing();
-        setEstado(msg.from, "aguardando_municipio");
-        await client.sendMessage(msg.from, "📍 De qual município você deseja o endereço do SINTET?");
-        return;
-      }
-
       // Se estivermos aguardando escolha no menu principal
       if (estadoAtual === "aguardando_opcao") {
         if (texto === "1") {
@@ -635,8 +554,8 @@ client.on("message", async (msg) => {
 
         if (texto === "2") {
           await typing();
-          await client.sendMessage(msg.from, mensagemIA());
-          setEstado(msg.from, "ia");
+          await client.sendMessage(msg.from, mensagemPerguntas());
+          setEstado(msg.from, "perguntas");
           return;
         }
 
@@ -728,27 +647,39 @@ client.on("message", async (msg) => {
         return;
       }
 
-      // MODO IA: apenas quando estado === 'ia'
-      if (estadoAtual === "ia") {
-        // permitir sair para menu
-        if (texto === "menu") {
+      // MODO PERGUNTAS: apenas quando estado === 'perguntas'
+      if (estadoAtual === "perguntas") {
+        // aceitar apenas 1..4 dentro desse modo
+        if (["1", "2", "3", "4"].includes(texto)) {
+          await typing();
+          switch (texto) {
+            case "1":
+              await client.sendMessage(msg.from, `📍 *Localização - SINTET Palmas*\n\nEndereço:\nQuadra 110 Norte, Alameda 25, Lote 31\nPlano Diretor Norte\nPalmas - TO\nCEP: 77006-148\n\n📞 Telefone: (63) 3213-2161\n\nDigite 'menu' para voltar ao menu.`);
+              break;
+            case "2":
+              await client.sendMessage(msg.from, `🕒 *Horário de atendimento*\n\nSegunda a sexta-feira:\n08:00 às 12:00\n14:00 às 18:00\n\n❌ Sábados, domingos e feriados: fechado\n\nDigite 'menu' para voltar ao menu.`);
+              break;
+            case "3":
+              await client.sendMessage(msg.from, `📄 *Serviços oferecidos*\n\nO SINTET atua na defesa dos trabalhadores da educação, oferecendo:\n\n• Atendimento jurídico (trabalhista e previdenciário)\n• Assessoria sindical\n• Apoio aos profissionais da educação\n• Formação e capacitação\n• Convênios e benefícios para filiados\n\nDigite 'menu' para voltar ao menu.`);
+              break;
+            case "4":
+              await client.sendMessage(msg.from, `📢 *Notícias e eventos*\n\nAcompanhe as últimas notícias, comunicados e eventos do SINTET:\n\n🌐 Site oficial:\nhttps://www.sintet.org.br\n\n📌 Lá você encontra:\n• Notícias atualizadas\n• Informações sobre greves e assembleias\n• Comunicados importantes\n\nDigite 'menu' para voltar ao menu.`);
+              break;
+          }
+          return;
+        }
+
+        // permitir voltar ao menu
+        if (texto === "menu" || texto === "ajuda" || texto === "oi" || texto === "ola" || texto === "olá") {
           await typing();
           await client.sendMessage(msg.from, mensagemMenu());
           setEstado(msg.from, "aguardando_opcao");
           return;
         }
 
+        // qualquer outra coisa não é válida aqui
         await typing();
-        const resp = await obterRespostaHibrida(textoOriginal, msg.from);
-
-        if (resp) {
-          await client.sendMessage(msg.from, resp);
-          return;
-        }
-
-        await client.sendMessage(msg.from, "Não encontrei essa informação com segurança. Redirecionando para um atendente humano...");
-        option[contatoId] = "Atendimento geral";
-        await createTicket(contatoId, msg);
+        await client.sendMessage(msg.from, `Digite uma opção de 1 a 4 (ou 'menu' para voltar).`);
         return;
       }
 
@@ -764,9 +695,3 @@ client.on("message", async (msg) => {
     console.error("❌ Erro no processamento da mensagem:", error);
   }
 });
-
-
-
-
-
-
